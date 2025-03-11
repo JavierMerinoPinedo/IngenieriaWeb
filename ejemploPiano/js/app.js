@@ -42,19 +42,61 @@ const notes = {
 const keys = document.querySelectorAll('.key');
 
 cancion = ['do-2', 'do-2', 're-2', 'do-2', 'fa-2', 'mi-2', 'do-2', 'do-2', 're-2', 'do-2', 'sol-2', 'fa-2', 'do-2', 'do-2', 'do-3', 'la-2', 'fa-2', 'mi-2', 're-2', 'la-si-2', 'la-si-2', 'la-2', 'fa-2', 'sol-2', 'fa-2'];
+
+function findExtremeNotes(cancion) {
+    const noteOrder = ['do', 're', 'mi', 'fa', 'sol', 'la', 'si'];
+    let lowestNote = cancion[0];
+    let highestNote = cancion[0];
+
+    cancion.forEach(note => {
+        const [noteName, octave] = note.split('-');
+        const [lowestNoteName, lowestOctave] = lowestNote.split('-');
+        const [highestNoteName, highestOctave] = highestNote.split('-');
+
+        if (parseInt(octave) < parseInt(lowestOctave) || 
+            (parseInt(octave) === parseInt(lowestOctave) && noteOrder.indexOf(noteName) < noteOrder.indexOf(lowestNoteName))) {
+            lowestNote = note;
+        }
+
+        if (parseInt(octave) > parseInt(highestOctave) || 
+            (parseInt(octave) === parseInt(highestOctave) && noteOrder.indexOf(noteName) > noteOrder.indexOf(highestNoteName))) {
+            highestNote = note;
+        }
+    });
+
+    return { lowestNote, highestNote };
+}
+
+const { lowestNote, highestNote } = findExtremeNotes(cancion);
+console.log('Nota más grave:', lowestNote);
+console.log('Nota más aguda:', highestNote);
+
 cont = 0;
+cancion = ['do-2', 'do-2', 're-2', 'do-2'];
 
 keys.forEach(key => {
     key.addEventListener('click', () => {
         const note = key.getAttribute('data-note');
         playSound(note);
         if(cancion[cont] == key.getAttribute('data-note')){
+            if(cont == cancion.length-1){
+                bloquearNotas();
+                setTimeout(() => {
+                    titulos = document.getElementById('Titulos');
+                    h1 = document.createElement('h1');
+                    h1.id = 'completion-message';
+                    h1.textContent = '¡Felicidades! Has completado la canción.';
+                    titulos.append(h1);
+                    tocarCancion(cont);
+                }, 1000);
+            }
             key.style.backgroundColor = '#03FC46';
             setTimeout(() => {
                 key.style.backgroundColor = '';
             }, 500);
             cont++;
         } else{
+            bloquearNotas();
             key.style.backgroundColor = '#FC0202';
             setTimeout(() => {
                 key.style.backgroundColor = '';
@@ -68,36 +110,65 @@ keys.forEach(key => {
 
 function playSound(note){
     let sound = notes[note];
-    console.log(sound);
     sound.play();
+}
+
+function bloquearNotas(){
+    keys.forEach(key => {
+        key.style.pointerEvents = 'none';
+    });
+}
+
+function desbloquearNotas(){
+    keys.forEach(key => {
+        key.style.pointerEvents = 'auto';
+    });
 }
 
 function tocarCancion(cont) {
     console.log('Tocando la cancion hasta la nota ' + cont);
     let delay = 0;
-    for (let i = 0; i <= cont; i++) {
-        if(i == cont){
+    if(cont == cancion.length){
+        for (let i = 0; i <= cont; i++) {
             setTimeout(() => {
                 playSound(cancion[i]);
                 const key = document.querySelector(`.key[data-note="${cancion[i]}"]`);
-                key.style.backgroundColor = '#E8FD03';
+                key.style.backgroundColor = '#03F6FE';
                 setTimeout(() => {
                     key.style.backgroundColor = '';
-                }, 500);
+                }, 200);
             }, delay);
-            delay += 750;
-        }
-        else {
-            setTimeout(() => {
-                playSound(cancion[i]);
-                const key = document.querySelector(`.key[data-note="${cancion[i]}"]`);
-                key.style.backgroundColor = '#A29500';
+            delay += 500;
+        } 
+    } else{
+        for (let i = 0; i <= cont; i++) {
+            if(i == cont){
                 setTimeout(() => {
-                    key.style.backgroundColor = '';
-                }, 500);
-            }, delay);
-            delay += 1000;
+                    playSound(cancion[i]);
+                    const key = document.querySelector(`.key[data-note="${cancion[i]}"]`);
+                    key.style.backgroundColor = '#E8FD03';
+                    setTimeout(() => {
+                        key.style.backgroundColor = '';
+                    }, 500);
+                }, delay);
+                delay += 750;
+            }
+            else {
+                setTimeout(() => {
+                    playSound(cancion[i]);
+                    const key = document.querySelector(`.key[data-note="${cancion[i]}"]`);
+                    key.style.backgroundColor = '#A29500';
+                    setTimeout(() => {
+                        key.style.backgroundColor = '';
+                    }, 500);
+                }, delay);
+                delay += 500;
+            }
         }
+        cont = 0;
     }
-    cont = 0;
+    setTimeout(() => {
+        desbloquearNotas();
+        console.log("Desbloqueando notas");
+    }, delay);
 }
